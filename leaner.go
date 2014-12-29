@@ -20,6 +20,8 @@ func newLearner(id int, nt network, acceptors ...int) *learner {
 	return l
 }
 
+// A value is learned when a single proposal with that value has been accepted by
+// a majority of the acceptors.
 func (l *learner) learn() string {
 	for {
 		m, ok := l.nt.recv(time.Hour)
@@ -42,13 +44,17 @@ func (l *learner) learn() string {
 func (l *learner) receiveAccepted(accepted message) {
 	a := l.acceptors[accepted.from]
 	if a.n < accepted.n {
-		log.Printf("learner: %d received a new accepted %+v", l.id, accepted)
+		log.Printf("learner: %d received a new accepted proposal %+v", l.id, accepted)
 		l.acceptors[accepted.from] = accepted
 	}
 }
 
 func (l *learner) majority() int { return len(l.acceptors)/2 + 1 }
 
+// A proposal is chosen when it has been accepted by a majority of the
+// acceptors.
+// The leader might choose multiple proposals when it learns multiple times,
+// but we guarantee that all chosen proposals have the same value.
 func (l *learner) chosen() (message, bool) {
 	counts := make(map[int]int)
 	accepteds := make(map[int]message)
