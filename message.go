@@ -16,3 +16,11 @@ type message struct {
 	prevn    int
 	value    string
 }
+
+func (m message) number() int {
+	return m.n
+}
+
+type promise interface {
+	number() int
+}

@@ -13,13 +13,13 @@ type acceptor struct {
 	learners []int
 
 	accept   message
-	promised message
+	promised promise
 
 	nt network
 }
 
 func newAcceptor(id int, nt network, learners ...int) *acceptor {
-	return &acceptor{id: id, nt: nt, learners: learners}
+	return &acceptor{id: id, nt: nt, promised: message{}, learners: learners}
 }
 
 func (a *acceptor) run() {
@@ -56,7 +56,7 @@ func (a *acceptor) run() {
 // proposals numbered less than n and with the highest-numbered proposal
 // (if any) that it has accepted.
 func (a *acceptor) receivePrepare(prepare message) (message, bool) {
-	if a.promised.n >= prepare.n {
+	if a.promised.number() >= prepare.n {
 		log.Printf("acceptor: %d [promised: %+v] ignored prepare %+v", a.id, a.promised, prepare)
 		return message{}, false
 	}
@@ -65,7 +65,7 @@ func (a *acceptor) receivePrepare(prepare message) (message, bool) {
 	m := message{
 		typ:  Promise,
 		from: a.id, to: prepare.from,
-		n: a.promised.n,
+		n: a.promised.number(),
 		// previously accepted proposal
 		prevn: a.accept.n, value: a.accept.value,
 	}
@@ -76,11 +76,11 @@ func (a *acceptor) receivePrepare(prepare message) (message, bool) {
 // n, it accepts the proposal unless it has already responded to a prepare
 // request having a number greater than n.
 func (a *acceptor) receivePropose(propose message) bool {
-	if a.promised.n > propose.n {
+	if a.promised.number() > propose.n {
 		log.Printf("acceptor: %d [promised: %+v] ignored proposal %+v", a.id, a.promised, propose)
 		return false
 	}
-	if a.promised.n < propose.n {
+	if a.promised.number() < propose.n {
 		log.Panicf("acceptor: %d received unexpected proposal %+v", a.id, propose)
 	}
 	log.Printf("acceptor: %d [promised: %+v, accept: %+v] accepted proposal %+v", a.id, a.promised, a.accept, propose)
