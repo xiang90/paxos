@@ -34,6 +34,15 @@ func (pn *paxosNetwork) send(m message) {
 	pn.recvQueues[m.to] <- m
 }
 
+func (pn *paxosNetwork) empty() bool {
+	var n int
+	for i, q := range pn.recvQueues {
+		log.Printf("nt: %d left %d", i, len(q))
+		n += len(q)
+	}
+	return n == 0
+}
+
 func (pn *paxosNetwork) recvFrom(from int, timeout time.Duration) (message, bool) {
 	select {
 	case m := <-pn.recvQueues[from]:

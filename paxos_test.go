@@ -55,4 +55,5 @@ func TestPaxosWithTwoProposers(t *testing.T) {
 	if value != "hello world" {
 		t.Errorf("value = %s, want %s", value, "hello world")
 	}
+	time.Sleep(time.Millisecond)
 }

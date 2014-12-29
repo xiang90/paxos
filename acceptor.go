@@ -30,7 +30,8 @@ func (a *acceptor) run() {
 		}
 		switch m.typ {
 		case "propose":
-			if a.receivePropose(m) {
+			accepted := a.receivePropose(m)
+			if accepted {
 				for _, l := range a.learners {
 					m := a.accept
 					m.from = a.id
@@ -49,23 +50,6 @@ func (a *acceptor) run() {
 	}
 }
 
-// If an acceptor receives an accept request for a proposal numbered
-// n, it accepts the proposal unless it has already responded to a prepare
-// request having a number greater than n.
-func (a *acceptor) receivePropose(propose message) bool {
-	if propose.typ != "propose" {
-		panic("bad msg type")
-	}
-	if a.promised.n > propose.n {
-		log.Printf("acceptor: %d [promised: %+v] ignored propose %+v", a.id, a.promised, propose)
-		return false
-	}
-	log.Printf("acceptor: %d [promised: %+v, accept: %+v] accepted propose %+v", a.id, a.promised, a.accept, propose)
-	a.accept = propose
-	a.accept.typ = "accepted"
-	return true
-}
-
 // If an acceptor receives a prepare request with number n greater
 // than that of any prepare request to which it has already responded,
 // then it responds to the request with a promise not to accept any more
@@ -81,7 +65,34 @@ func (a *acceptor) receivePrepare(prepare message) (message, bool) {
 	}
 	log.Printf("acceptor: %d [promised: %+v] promised %+v", a.id, a.promised, prepare)
 	a.promised = prepare
-	return message{from: a.id, to: prepare.from, typ: "promise", n: a.promised.n, prevn: a.accept.n, value: a.accept.value}, true
+	m := message{
+		typ:  "promise",
+		from: a.id, to: prepare.from,
+		n: a.promised.n,
+		// previously accepted proposal
+		prevn: a.accept.n, value: a.accept.value,
+	}
+	return m, true
+}
+
+// If an acceptor receives an accept request for a proposal numbered
+// n, it accepts the proposal unless it has already responded to a prepare
+// request having a number greater than n.
+func (a *acceptor) receivePropose(propose message) bool {
+	if propose.typ != "propose" {
+		panic("bad msg type")
+	}
+	if a.promised.n > propose.n {
+		log.Printf("acceptor: %d [promised: %+v] ignored proposal %+v", a.id, a.promised, propose)
+		return false
+	}
+	if a.promised.n < propose.n {
+		log.Panicf("acceptor: %d received unexpected proposal %+v", a.id, propose)
+	}
+	log.Printf("acceptor: %d [promised: %+v, accept: %+v] accepted proposal %+v", a.id, a.promised, a.accept, propose)
+	a.accept = propose
+	a.accept.typ = "accepted"
+	return true
 }
 
 func (a *acceptor) restart() {}
