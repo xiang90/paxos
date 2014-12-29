@@ -28,8 +28,8 @@ func (l *learner) learn() string {
 		if !ok {
 			continue
 		}
-		if m.typ != "accepted" {
-			panic("bad msg type")
+		if m.typ != Accept {
+			log.Panicf("learner: %d received unexpected msg %+v", l.id, m)
 		}
 		l.receiveAccepted(m)
 		m, ok = l.chosen()

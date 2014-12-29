@@ -45,7 +45,7 @@ func (p *proposer) run() {
 		}
 
 		switch m.typ {
-		case "promise":
+		case Promise:
 			p.receivePromise(m)
 		default:
 			log.Panicf("proposer: %d unexpected message type: ", p.id, m.typ)
@@ -72,7 +72,7 @@ func (p *proposer) propose() []message {
 	i := 0
 	for to, promise := range p.acceptors {
 		if promise.n == p.n() {
-			ms[i] = message{from: p.id, to: to, typ: "propose", n: p.n(), value: p.value}
+			ms[i] = message{from: p.id, to: to, typ: Propose, n: p.n(), value: p.value}
 			i++
 		}
 		if i == p.majority() {
@@ -92,7 +92,7 @@ func (p *proposer) prepare() []message {
 	ms := make([]message, p.majority())
 	i := 0
 	for to := range p.acceptors {
-		ms[i] = message{from: p.id, to: to, typ: "prepare", n: p.n()}
+		ms[i] = message{from: p.id, to: to, typ: Prepare, n: p.n()}
 		i++
 		if i == p.majority() {
 			break

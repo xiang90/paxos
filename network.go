@@ -65,11 +65,3 @@ func (an *agentNetwork) send(m message) {
 func (an *agentNetwork) recv(timeout time.Duration) (message, bool) {
 	return an.recvFrom(an.id, timeout)
 }
-
-type message struct {
-	from, to int
-	typ      string
-	n        int
-	prevn    int
-	value    string
-}

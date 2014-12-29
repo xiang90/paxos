@@ -29,7 +29,7 @@ func (a *acceptor) run() {
 			continue
 		}
 		switch m.typ {
-		case "propose":
+		case Propose:
 			accepted := a.receivePropose(m)
 			if accepted {
 				for _, l := range a.learners {
@@ -39,7 +39,7 @@ func (a *acceptor) run() {
 					a.nt.send(m)
 				}
 			}
-		case "prepare":
+		case Prepare:
 			promise, ok := a.receivePrepare(m)
 			if ok {
 				a.nt.send(promise)
@@ -56,9 +56,6 @@ func (a *acceptor) run() {
 // proposals numbered less than n and with the highest-numbered proposal
 // (if any) that it has accepted.
 func (a *acceptor) receivePrepare(prepare message) (message, bool) {
-	if prepare.typ != "prepare" {
-		panic("bad msg type")
-	}
 	if a.promised.n >= prepare.n {
 		log.Printf("acceptor: %d [promised: %+v] ignored prepare %+v", a.id, a.promised, prepare)
 		return message{}, false
@@ -66,7 +63,7 @@ func (a *acceptor) receivePrepare(prepare message) (message, bool) {
 	log.Printf("acceptor: %d [promised: %+v] promised %+v", a.id, a.promised, prepare)
 	a.promised = prepare
 	m := message{
-		typ:  "promise",
+		typ:  Promise,
 		from: a.id, to: prepare.from,
 		n: a.promised.n,
 		// previously accepted proposal
@@ -79,9 +76,6 @@ func (a *acceptor) receivePrepare(prepare message) (message, bool) {
 // n, it accepts the proposal unless it has already responded to a prepare
 // request having a number greater than n.
 func (a *acceptor) receivePropose(propose message) bool {
-	if propose.typ != "propose" {
-		panic("bad msg type")
-	}
 	if a.promised.n > propose.n {
 		log.Printf("acceptor: %d [promised: %+v] ignored proposal %+v", a.id, a.promised, propose)
 		return false
@@ -91,7 +85,7 @@ func (a *acceptor) receivePropose(propose message) bool {
 	}
 	log.Printf("acceptor: %d [promised: %+v, accept: %+v] accepted proposal %+v", a.id, a.promised, a.accept, propose)
 	a.accept = propose
-	a.accept.typ = "accepted"
+	a.accept.typ = Accept
 	return true
 }
 
