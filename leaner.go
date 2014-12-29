@@ -7,15 +7,15 @@ import (
 
 type learner struct {
 	id        int
-	acceptors map[int]message
+	acceptors map[int]accept
 
 	nt network
 }
 
 func newLearner(id int, nt network, acceptors ...int) *learner {
-	l := &learner{id: id, nt: nt, acceptors: make(map[int]message)}
+	l := &learner{id: id, nt: nt, acceptors: make(map[int]accept)}
 	for _, a := range acceptors {
-		l.acceptors[a] = message{}
+		l.acceptors[a] = message{typ: Accept}
 	}
 	return l
 }
@@ -32,18 +32,18 @@ func (l *learner) learn() string {
 			log.Panicf("learner: %d received unexpected msg %+v", l.id, m)
 		}
 		l.receiveAccepted(m)
-		m, ok = l.chosen()
+		accept, ok := l.chosen()
 		if !ok {
 			continue
 		}
-		log.Printf("learner: %d learned the chosen propose %+v", l.id, m)
-		return m.value
+		log.Printf("learner: %d learned the chosen propose %+v", l.id, accept)
+		return accept.proposalValue()
 	}
 }
 
 func (l *learner) receiveAccepted(accepted message) {
 	a := l.acceptors[accepted.from]
-	if a.n < accepted.n {
+	if a.proposalNumber() < accepted.n {
 		log.Printf("learner: %d received a new accepted proposal %+v", l.id, accepted)
 		l.acceptors[accepted.from] = accepted
 	}
@@ -55,14 +55,14 @@ func (l *learner) majority() int { return len(l.acceptors)/2 + 1 }
 // acceptors.
 // The leader might choose multiple proposals when it learns multiple times,
 // but we guarantee that all chosen proposals have the same value.
-func (l *learner) chosen() (message, bool) {
+func (l *learner) chosen() (accept, bool) {
 	counts := make(map[int]int)
-	accepteds := make(map[int]message)
+	accepteds := make(map[int]accept)
 
 	for _, accepted := range l.acceptors {
-		if accepted.n != 0 {
-			counts[accepted.n]++
-			accepteds[accepted.n] = accepted
+		if accepted.proposalNumber() != 0 {
+			counts[accepted.proposalNumber()]++
+			accepteds[accepted.proposalNumber()] = accepted
 		}
 	}
 

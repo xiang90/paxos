@@ -13,12 +13,12 @@ type proposer struct {
 	value  string
 	valueN int
 
-	acceptors map[int]message
+	acceptors map[int]promise
 	nt        network
 }
 
 func newProposer(id int, value string, nt network, acceptors ...int) *proposer {
-	p := &proposer{id: id, nt: nt, lastSeq: 0, value: value, acceptors: make(map[int]message)}
+	p := &proposer{id: id, nt: nt, lastSeq: 0, value: value, acceptors: make(map[int]promise)}
 	for _, a := range acceptors {
 		p.acceptors[a] = message{}
 	}
@@ -71,7 +71,7 @@ func (p *proposer) propose() []message {
 
 	i := 0
 	for to, promise := range p.acceptors {
-		if promise.n == p.n() {
+		if promise.number() == p.n() {
 			ms[i] = message{from: p.id, to: to, typ: Propose, n: p.n(), value: p.value}
 			i++
 		}
@@ -104,15 +104,15 @@ func (p *proposer) prepare() []message {
 func (p *proposer) receivePromise(promise message) {
 	prevPromise := p.acceptors[promise.from]
 
-	if prevPromise.n < promise.n {
+	if prevPromise.number() < promise.number() {
 		log.Printf("proposer: %d received a new promise %+v", p.id, promise)
 		p.acceptors[promise.from] = promise
 
 		//update value to the value with a larger N
-		if promise.prevn > p.valueN {
-			log.Printf("proposer: %d updated the value [%s] to %s", p.id, p.value, promise.value)
-			p.valueN = promise.prevn
-			p.value = promise.value
+		if promise.proposalNumber() > p.valueN {
+			log.Printf("proposer: %d updated the value [%s] to %s", p.id, p.value, promise.proposalValue())
+			p.valueN = promise.proposalNumber()
+			p.value = promise.proposalValue()
 		}
 	}
 }
@@ -122,7 +122,7 @@ func (p *proposer) majority() int { return len(p.acceptors)/2 + 1 }
 func (p *proposer) majorityReached() bool {
 	m := 0
 	for _, promise := range p.acceptors {
-		if promise.n == p.n() {
+		if promise.number() == p.n() {
 			m++
 		}
 	}

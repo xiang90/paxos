@@ -56,7 +56,7 @@ func (a *acceptor) run() {
 // proposals numbered less than n and with the highest-numbered proposal
 // (if any) that it has accepted.
 func (a *acceptor) receivePrepare(prepare message) (message, bool) {
-	if a.promised.number() >= prepare.n {
+	if a.promised.number() >= prepare.number() {
 		log.Printf("acceptor: %d [promised: %+v] ignored prepare %+v", a.id, a.promised, prepare)
 		return message{}, false
 	}
@@ -76,11 +76,11 @@ func (a *acceptor) receivePrepare(prepare message) (message, bool) {
 // n, it accepts the proposal unless it has already responded to a prepare
 // request having a number greater than n.
 func (a *acceptor) receivePropose(propose message) bool {
-	if a.promised.number() > propose.n {
+	if a.promised.number() > propose.number() {
 		log.Printf("acceptor: %d [promised: %+v] ignored proposal %+v", a.id, a.promised, propose)
 		return false
 	}
-	if a.promised.number() < propose.n {
+	if a.promised.number() < propose.number() {
 		log.Panicf("acceptor: %d received unexpected proposal %+v", a.id, propose)
 	}
 	log.Printf("acceptor: %d [promised: %+v, accept: %+v] accepted proposal %+v", a.id, a.promised, a.accept, propose)
