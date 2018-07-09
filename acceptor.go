@@ -45,7 +45,7 @@ func (a *acceptor) run() {
 				a.nt.send(promise)
 			}
 		default:
-			log.Panicf("acceptor: %d unexpected message type: ", a.id, m.typ)
+			log.Panicf("acceptor: %d unexpected message type: %v", a.id, m.typ)
 		}
 	}
 }
