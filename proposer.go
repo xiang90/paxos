@@ -48,7 +48,7 @@ func (p *proposer) run() {
 		case Promise:
 			p.receivePromise(m)
 		default:
-			log.Panicf("proposer: %d unexpected message type: ", p.id, m.typ)
+			log.Panicf("proposer: %d unexpected message type: %v", p.id, m.typ)
 		}
 	}
 	log.Printf("proposer: %d promise %d reached majority %d", p.id, p.n(), p.majority())
